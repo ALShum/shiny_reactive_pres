@@ -1,0 +1,12 @@
+library(shiny)
+shinyUI(
+  fluidPage(
+    titlePanel("types"),
+    column(4,
+      textOutput("input")
+    ),
+    column(4,
+      textOutput("output")
+    )
+  )
+)

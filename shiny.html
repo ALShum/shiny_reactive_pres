@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Introduction to Shiny</title>
+  <meta name="description" content="">
+  <meta name="author" content="Alex Shum">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="libraries/frameworks/revealjs/css/reveal.min.css">
+  <link rel="stylesheet" href="libraries/frameworks/revealjs/css/theme/default.css" id="theme">
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" id="theme">
+  <!--[if lt IE 9]>
+  <script src="lib/js/html5shiv.js"></script>
+  <![endif]-->  
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section class='' data-state='' id='slide-1'>
+  <h2>Shiny: Reactive Programming for Fun</h2>
+  <p>Alex Shum</p>
+
+<p>February 11, 2016</p>
+
+</section>
+<section class='' data-state='' id='slide-2'>
+  <h2>Shiny: Reactive Programming for Fun</h2>
+  <ul>
+<li>Shiny logic flow
+
+<ul>
+<li>Reactive sources</li>
+<li>Reactive endpoint</li>
+</ul></li>
+<li>Reactive Functions
+
+<ul>
+<li>Minimize side effects!</li>
+</ul></li>
+<li>When to use side effects
+
+<ul>
+<li>Reactive Values</li>
+<li>Observers/Observe Event</li>
+</ul></li>
+<li>Bonus: How to literally avoid getting murdered by Joe Cheng</li>
+</ul>
+
+</section>
+<section class='' data-state='' id='slide-3'>
+  <h2>Shinytology: OT Levels</h2>
+  <ol>
+<li>Started tutorial.  Used <code>output</code> and <code>input</code>.</li>
+<li>Finished tutorial.  Used reactive functions,</li>
+<li>Written reactive functions to depend on other reactive functions.</li>
+<li>When to use <code>reactive()</code> vs. <code>observe()</code></li>
+<li>Higher-order reactives: functions that have reactive expressions as inputs and return values.</li>
+<li>Reactive Expressions are Monads.</li>
+</ol>
+
+</section>
+<section class='' data-state='' id='slide-4'>
+  <h2>Reactive Programming</h2>
+  <pre><code class="r">A = c(1, 2, 3, 4)
+B = 3 * A
+A = c(1, 1, 1, 1)
+</code></pre>
+
+<p>What is the value of <code>B</code> at the end of this code segment?</p>
+
+<ul>
+<li>Normal R: <code>B == c(3, 6, 9 12)</code></li>
+<li>Reactive R: <code>B == c(3, 3, 3, 3)</code></li>
+<li>Reactive programming allows automatic updates whenever a change is detected.</li>
+</ul>
+
+</section>
+<section>
+   <section class='' data-state=''>
+    <h2>Simple example User Interface</h2>
+    <pre><code class="r">shinyUI(
+  fluidPage(
+    titlePanel(&quot;Hello World!&quot;),
+
+    sidebarPanel(
+      sliderInput(&quot;obs&quot;, 
+        &quot;Number of observations:&quot;, 
+        min = 1,
+        max = 1000, 
+        value = 500)
+    ),
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput(&quot;distPlot&quot;)
+    )
+  )
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Simple example Server Code</h2>
+
+<pre><code class="r">shinyServer(
+  function(input, output) {
+    output$distPlot &lt;- renderPlot({
+      dist &lt;- rnorm(input$obs)
+      hist(dist)
+    })
+  }
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Source and Endpoint</h2>
+
+<ul>
+<li>Data input from &quot;Reactive Source&quot;
+
+<ul>
+<li>Typically user input from browser interface.</li>
+<li>Example: select an item, click a button, enter in a value.</li>
+</ul></li>
+<li>Data output as &quot;Reactive endpoint&quot;
+
+<ul>
+<li>Reactive endpoint displays result to user.</li>
+<li>Example: Plot data after processing.</li>
+</ul></li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Server and UI Design</h2>
+
+<ul>
+<li>Server function has <code>input</code> and <code>output</code> parameters.
+
+<ul>
+<li>These are <code>reactiveValues</code> -- lists of reactive types.</li>
+<li><code>input</code> is a reactiveValues list for data from the UI.</li>
+<li><code>output</code> is a reactiveValues list with plots and output for the UI.</li>
+</ul></li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section class='' data-state='' id='slide-6'>
+  <h2>All the stuff inbetween Source and Endpoint</h2>
+  <ul>
+<li>Reactive Expressions: like functions</li>
+<li>Reactive Values: like lists</li>
+<li>Observer: perform actions</li>
+<li>ObserveEvent: perform actions</li>
+</ul>
+
+</section>
+<section>
+   <section class='' data-state=''>
+    <h2>Another example</h2>
+    <p>ui.r</p>
+
+<pre><code class="r">shinyUI(
+  fluidPage(
+    titlePanel(&quot;Hello World 2!&quot;),
+
+    sidebarPanel(
+      sliderInput(&quot;obs&quot;, 
+        &quot;Number of observations&quot;, 
+        min = 1,
+        max = 1000,
+        value = 100)
+    ),
+
+    mainPanel(
+      plotOutput(&quot;plot&quot;),
+      tableOutput(&quot;table&quot;)
+    )
+  )
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <p>server.r (incorrect)</p>
+
+<pre><code class="r">slow = function(x) {
+  Sys.sleep(1)
+  x
+}
+x_data = rnorm(1000, 0, 5)
+y_data = rnorm(1000, 0, 5)
+
+shinyServer(
+function(input, output, session) {
+  output$plot &lt;- renderPlot({
+    qplot(x = slow(head(x_data, input$obs)), y = head(y_data, input$obs))
+  })
+
+  output$table &lt;- renderTable({
+    data.frame(x = head(x_data, input$obs), y = head(y_data, input$obs))
+  })
+}
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <p>server.r (correct)</p>
+
+<pre><code class="r">slow = function(x) {
+  Sys.sleep(1)
+  x
+}
+x_data = rnorm(1000, 0, 5)
+y_data = rnorm(1000, 0, 5)
+
+shinyServer(
+  function(input, output, session) {
+    data &lt;- reactive({
+      x = slow(head(x_data, input$obs))
+      y = head(y_data, input$obs)
+      data.frame(x = x, y = y)
+    })  
+
+    output$plot &lt;- renderPlot({
+      qplot(x = x, y = y, data = data())
+    })  
+
+    output$table &lt;- renderTable({
+      data()
+    })
+  }
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Why use a reactive expression?</h2>
+
+<ul>
+<li>Use a reactive expression when you would use a function in base R.</li>
+<li>Reactive expressions update when inputs change.</li>
+<li>Reactive expressions cache results!</li>
+<li>Cache expensive computations -- don&#39;t run operations more than necessary.</li>
+<li>Reactive expressions are basically functions with caching.</li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h2>Functional Programming: Side effects</h2>
+    <ul>
+<li>A function that modifies the state outside the function.</li>
+<li>Pure functions return a value and make no changes to the outside state.</li>
+<li>Reasoning through code is easier with pure functions.<br></li>
+<li>Reactive expressions are basically functions: avoid side effects</li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Side effects (ANTI-Solutions)</h2>
+
+<ul>
+<li>If your reactives have side effects then you&#39;re wrong</li>
+</ul>
+
+<pre><code class="r">#incorrect 
+data &lt;- reactive({
+  x = slow(head(x_data, input$obs))
+  y = head(y_data, input$obs)
+  df = data.frame(x = x, y = y)
+
+  output$table &lt;- renderTable({
+    df
+  })
+
+  df
+})
+
+#correct
+data &lt;- reactive({
+  x = slow(head(x_data, input$obs))
+  y = head(y_data, input$obs)
+  data.frame(x = x, y = y)
+})  
+
+output$table &lt;- renderTable({
+  data()
+})
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Side effects (ANTI-Solutions)</h2>
+
+<ul>
+<li>If you set a reactive endpoint inside an observer you&#39;re probably wrong</li>
+</ul>
+
+<pre><code class="r">#incorrect
+observe({
+  output$table &lt;- renderTable({
+    data()
+  })
+})
+
+#correct
+output$table &lt;- renderTable({
+  data()
+})
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Side effects (ANTI-Solutions)</h2>
+
+<ul>
+<li>Use reactive expressions to model calculations instead of using observers to set variables</li>
+</ul>
+
+<pre><code class="r">#incorrect
+data = reactiveValues(df = NA)
+observe({
+  x = slow(head(x_data, input$obs))
+  y = head(y_data, input$obs)
+  data$df = data.frame(x = x, y = y)
+})
+
+#correct
+data &lt;- reactive({
+  x = slow(head(x_data, input$obs))
+  y = head(y_data, input$obs)
+  data.frame(x = x, y = y)
+})  
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h2>More complicated example</h2>
+    <p>ui.R</p>
+
+<pre><code class="r">shinyUI(
+  fluidPage(
+    titlePanel(&quot;Weather Plotter&quot;),
+    column(4,
+      textInput(
+        inputId = &quot;location_id&quot;,
+        label = &quot;Enter location: &quot;,
+        value = &quot;California/San_Diego&quot;
+      ),
+      actionButton(
+        inputId = &quot;submit_loc&quot;,
+        label = &quot;Submit&quot;
+      )
+    ),
+    column(8,
+      dygraphs::dygraphOutput(&quot;dygraph1&quot;)
+    )
+  )
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>More complicated example</h2>
+
+<p>Server.R</p>
+
+<pre><code class="r">shinyServer(
+  function(input, output, session) {
+    rv_data = reactiveValues(
+      forecast_xts = NULL
+    )
+
+    observeEvent(
+      eventExpr = input[[&quot;submit_loc&quot;]],
+      handlerExpr = {
+        data = rwunderground::hourly10day(input[[&quot;location_id&quot;]])
+        data_temp = data[&quot;temp&quot;]
+        forecast_xts = xts::xts(data_temp, order.by = data$date)
+        rv_data$forecast_xts = forecast_xts
+      }
+    )
+
+    rct_get_data = reactive({
+      validate(
+        need(rv_data$forecast_xts, &quot;Please query data from server&quot;)
+      )
+      rv_data$forecast_xts
+    })
+
+    output[[&quot;dygraph1&quot;]] = renderDygraph({
+      dygraphs::dygraph(rct_get_data())
+    })
+  }
+)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h2>Observers, what&#39;s the difference?</h2>
+
+<ul>
+<li>In this case: using a GET request from an external resource.</li>
+<li>Not fetching data interally or getting input from UI (use reactive for this).</li>
+<li>Observers perform actions and don&#39;t return values.</li>
+<li>Observers are for performing actions with side effects.</li>
+<li>Care about code exeuction.</li>
+<li>No caching.</li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section class='' data-state='' id='slide-10'>
+  <h2>Final</h2>
+  <ul>
+<li>Use reactive expressions for calculations.</li>
+<li>Use observers for actions (side effects).</li>
+<li>Keep your side effects outside of your reactives.
+
+<ul>
+<li>Joe Cheng threatened to kill anyone who does not follow this rule.</li>
+</ul></li>
+</ul>
+
+</section>
+<section class='' data-state='' id='slide-11'>
+  <h2>END</h2>
+  
+</section>
+    </div>
+  </div>
+</body>
+  <script src="libraries/frameworks/revealjs/lib/js/head.min.js"></script>
+  <script src="libraries/frameworks/revealjs/js/reveal.min.js"></script>
+  <script>
+  // Full list of configuration options available here:
+  // https://github.com/hakimel/reveal.js#configuration
+  Reveal.initialize({
+    controls: true,
+    progress: true,
+    history: true,
+    center: true,
+    theme: Reveal.getQueryHash().theme || 'default', 
+    transition: Reveal.getQueryHash().transition || 'default', 
+    dependencies: [
+    // Cross-browser shim that fully implements classList -
+    // https://github.com/eligrey/classList.js/
+      { src: 'libraries/frameworks/revealjs/lib/js/classList.js', condition: function() { return !document.body.classList;}},
+      // Zoom in and out with Alt+click
+      { src: 'libraries/frameworks/revealjs/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Speaker notes
+      { src: 'libraries/frameworks/revealjs/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Remote control your reveal.js presentation using a touch device
+      //{ src: 'libraries/frameworks/revealjs/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+      ]
+  });
+  </script>  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      processEscapes: true
+    }
+  });
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script> -->
+<script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+<script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!-- DONE LOADING HIGHLIGHTER JS FILES -->
+ 
+
+</html>
